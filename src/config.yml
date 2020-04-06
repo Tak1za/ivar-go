@@ -1,0 +1,7 @@
+server:
+  url: #SetByUser
+  username: #SetByUser
+  password: #SetByUser
+
+database:
+  index: #SetByUser

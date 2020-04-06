@@ -5,11 +5,17 @@ import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
+	"ivar-go/src/helpers"
 	"log"
 )
 
-func SearchQuery(index string, queryBody bytes.Buffer) []byte {
-	es, _ := GetESClient()
+func SearchQuery(queryBody bytes.Buffer) []byte {
+	index := helpers.Config.Database.Index
+	elasticUrl := helpers.Config.Server.URL
+	username := helpers.Config.Server.Username
+	password := helpers.Config.Server.Password
+
+	es, _ := GetESClient(elasticUrl, username, password)
 
 	resp, err := es.Search(
 		es.Search.WithContext(context.Background()),
@@ -44,5 +50,4 @@ func SearchQuery(index string, queryBody bytes.Buffer) []byte {
 	}
 
 	return respBody
-
 }

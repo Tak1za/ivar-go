@@ -15,13 +15,11 @@ func HomeController(w http.ResponseWriter, r *http.Request) {
 }
 
 func UsersController(w http.ResponseWriter, r *http.Request) {
-	index := "application"
-
 	//Get the required get users query
 	queryBody := queries.GetUsersQuery()
 
 	//Get the elastic request response (in bytes)
-	respBody := elastic_client.SearchQuery(index, queryBody)
+	respBody := elastic_client.SearchQuery(queryBody)
 
 	var elasticResponse models.ESResponse
 
