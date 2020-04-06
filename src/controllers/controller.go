@@ -1,10 +1,8 @@
 package controllers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"ivar-go/src/elastic_client"
 	"ivar-go/src/elastic_client/queries"
 	"ivar-go/src/models"
@@ -17,49 +15,25 @@ func HomeController(w http.ResponseWriter, r *http.Request) {
 }
 
 func UsersController(w http.ResponseWriter, r *http.Request) {
-	es, _ := elastic_client.GetESClient()
+	index := "application"
 
+	//Get the required get users query
 	queryBody := queries.GetUsersQuery()
-	resp, err := es.Search(
-		es.Search.WithContext(context.Background()),
-		es.Search.WithIndex("application"),
-		es.Search.WithBody(&queryBody),
-		es.Search.WithTrackTotalHits(true),
-		es.Search.WithPretty(),
-	)
 
-	if err != nil {
-		log.Fatalf("Error getting response: %s", err)
-	}
-
-	defer resp.Body.Close()
-
-	if resp.IsError() {
-		var e map[string]interface{}
-		if err := json.NewDecoder(resp.Body).Decode(&e); err != nil {
-			log.Fatalf("Error parsing the response body: %s", err)
-		} else {
-			log.Fatalf("[%s] %s: %s",
-				resp.Status(),
-				e["error"].(map[string]interface{})["type"],
-				e["error"].(map[string]interface{})["reason"],
-			)
-		}
-	}
-
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	//Get the elastic request response (in bytes)
+	respBody := elastic_client.SearchQuery(index, queryBody)
 
 	var elasticResponse models.ESResponse
 
-	err = json.Unmarshal(respBody, &elasticResponse)
+	//Convert []bytes to struct
+	err := json.Unmarshal(respBody, &elasticResponse)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	responseData := elasticResponse.OuterHits.InnerHits
+
+	//Encode the data into the response writer
 	err = json.NewEncoder(w).Encode(responseData)
 	if err != nil {
 		log.Fatalln(err)
