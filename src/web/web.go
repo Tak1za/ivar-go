@@ -11,8 +11,8 @@ import (
 func main() {
 	//Router Setup
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/", controllers.HomeController)
 	router.HandleFunc("/users", controllers.UsersController)
+	router.HandleFunc("/posts/{userId}", controllers.GetPostsByUserId)
 	fmt.Println("IVAR-Go listening at port: 8080")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
