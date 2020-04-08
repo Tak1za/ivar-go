@@ -1,10 +1,11 @@
 package controllers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"ivar-go/src/elastic_client"
-	"ivar-go/src/elastic_client/queries"
+	"google.golang.org/api/iterator"
+	"ivar-go/src/client"
 	"ivar-go/src/models"
 	"log"
 	"net/http"
@@ -15,25 +16,34 @@ func HomeController(w http.ResponseWriter, r *http.Request) {
 }
 
 func UsersController(w http.ResponseWriter, r *http.Request) {
-	//Get the required get users query
-	queryBody := queries.GetUsersQuery()
+	ctx := context.Background()
 
-	//Get the elastic request response (in bytes)
-	respBody := elastic_client.SearchQuery(queryBody)
+	firestore, _ := client.GetFirestoreClient()
+	defer firestore.Close()
 
-	var elasticResponse models.ESResponse
+	iter := firestore.Collection("users").Documents(ctx)
+	var users []models.User
+	for {
+		doc, err := iter.Next()
+		var user models.User
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			log.Fatalf("Failed to iterate: %v", err)
+		}
 
-	//Convert []bytes to struct
-	err := json.Unmarshal(respBody, &elasticResponse)
-	if err != nil {
-		log.Fatalln(err)
+		jsonString, _ := json.Marshal(doc.Data())
+		err = json.Unmarshal(jsonString, &user)
+		if err != nil {
+			log.Fatalf("Error unmarshalling to json: %s", err)
+		}
+		user.ID = doc.Ref.ID
+		users = append(users, user)
 	}
 
-	responseData := elasticResponse.OuterHits.InnerHits
-
-	//Encode the data into the response writer
-	err = json.NewEncoder(w).Encode(responseData)
+	err := json.NewEncoder(w).Encode(users)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalf("Error encoding data: %s", err)
 	}
 }
