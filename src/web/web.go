@@ -14,6 +14,7 @@ func main() {
 	router.HandleFunc("/users", controllers.UsersController)
 	router.HandleFunc("/posts/{userId}", controllers.GetPostsByUserId)
 	router.HandleFunc("/post/{userId}/{postId}", controllers.GetPostByPostId)
+	router.HandleFunc("/followers/{userId}", controllers.GetFollowers)
 	fmt.Println("IVAR-Go listening at port: 8080")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

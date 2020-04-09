@@ -2,11 +2,11 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
 	"google.golang.org/api/iterator"
 	"ivar-go/src/client"
+	"ivar-go/src/helpers"
 	"ivar-go/src/models"
 	"log"
 	"net/http"
@@ -52,24 +52,20 @@ func GetPostsByUserId(w http.ResponseWriter, r *http.Request) {
 
 func GetPostByPostId(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	ctx := context.Background()
 
 	firestore, _ := client.GetFirestoreClient()
 	defer firestore.Close()
 
-	doc, err := firestore.Collection(fmt.Sprintf("users/%s/posts", vars["userId"])).Doc(vars["postId"]).Get(ctx)
-	if err != nil {
-		log.Fatalf("Unable to fetch data: %s", err)
-	}
+	postData := helpers.GetPostRef(firestore, vars["userId"], vars["postId"])
 
 	var post models.Post
 
-	jsonString, _ := json.Marshal(doc.Data())
-	err = json.Unmarshal(jsonString, &post)
+	jsonString, _ := json.Marshal(postData.Data())
+	err := json.Unmarshal(jsonString, &post)
 	if err != nil {
 		log.Fatalf("Error unmarshalling to json: %s", err)
 	}
-	post.ID = doc.Ref.ID
+	post.ID = postData.Ref.ID
 
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(post)
