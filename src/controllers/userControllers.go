@@ -10,10 +10,21 @@ import (
 	"net/http"
 )
 
-func UsersController(w http.ResponseWriter, r *http.Request) {
+func UsersController(w http.ResponseWriter, _ *http.Request) {
+	var err error
+	defer func() {
+		if err != nil {
+			log.Printf("Error in GetFollowersController: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	}()
+
 	ctx := context.Background()
 
-	firestore, _ := client.GetFirestoreClient()
+	firestore, err := client.GetFirestoreClient()
+	if err != nil {
+		return
+	}
 	defer firestore.Close()
 
 	iter := firestore.Collection("users").Documents(ctx)
@@ -25,20 +36,21 @@ func UsersController(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		if err != nil {
-			log.Fatalf("Failed to iterate: %v", err)
+			return
 		}
 
 		jsonString, _ := json.Marshal(doc.Data())
 		err = json.Unmarshal(jsonString, &user)
 		if err != nil {
-			log.Fatalf("Error unmarshalling to json: %s", err)
+			return
 		}
 		user.ID = doc.Ref.ID
 		users = append(users, user)
 	}
+
 	w.WriteHeader(http.StatusOK)
-	err := json.NewEncoder(w).Encode(users)
+	err = json.NewEncoder(w).Encode(users)
 	if err != nil {
-		log.Fatalf("Error encoding data: %s", err)
+		return
 	}
 }

@@ -12,8 +12,10 @@ func GetFirestoreClient() (*firestore.Client, error) {
 	opt := option.WithCredentialsFile("src/ivar-cred.json")
 	app, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
-		log.Fatalf("Error initializing the firebase client: %s", err)
+		log.Printf("Error initializing the firebase client: %s", err)
+		return nil, err
 	}
+
 	fc, _ := app.Firestore(context.Background())
 	return fc, nil
 }

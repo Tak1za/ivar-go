@@ -2,35 +2,65 @@ package controllers
 
 import (
 	firestore2 "cloud.google.com/go/firestore"
+	"context"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"ivar-go/src/client"
-	"ivar-go/src/helpers"
 	"ivar-go/src/models"
 	"log"
 	"net/http"
 )
 
 func GetFollowers(w http.ResponseWriter, r *http.Request) {
+	var err error
+	var errNotFound error
+	defer func() {
+		if err != nil {
+			log.Printf("Error in GetFollowersController: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		if errNotFound != nil {
+			log.Printf("Error in GetFollowersController: %v", err)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}()
+
 	vars := mux.Vars(r)
 
-	firestore, _ := client.GetFirestoreClient()
+	firestore, err := client.GetFirestoreClient()
+	if err != nil {
+		return
+	}
+
 	defer firestore.Close()
 
-	usersRef := helpers.GetUserRef(firestore, vars["userId"])
+	usersRef, errNotFound := firestore.Collection("users").Doc(vars["userId"]).Get(context.Background())
+	if errNotFound != nil {
+		return
+	}
 
-	followersRef := helpers.GetFollowersRef(usersRef)
+	followersRef, err := usersRef.DataAt("followers")
+	if followersRef == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		return
+	}
 
 	//Doing this because we are storing userRef inside followers array
 	var followersRefs []*firestore2.DocumentRef
 
 	jsonString, _ := json.Marshal(followersRef)
-	err := json.Unmarshal(jsonString, &followersRefs)
+	err = json.Unmarshal(jsonString, &followersRefs)
 	if err != nil {
-		log.Fatalf("Error unmarshalling to array of documentRefs: %s", err)
+		return
 	}
 
-	followersSnaps := helpers.GetAllData(firestore, followersRefs)
+	followersSnaps, errNotFound := firestore.GetAll(context.Background(), followersRefs)
+	if errNotFound != nil {
+		return
+	}
 
 	var followersData []models.User
 
@@ -39,6 +69,9 @@ func GetFollowers(w http.ResponseWriter, r *http.Request) {
 
 		jsonString, _ = json.Marshal(fs.Data())
 		err = json.Unmarshal(jsonString, &followerData)
+		if err != nil {
+			return
+		}
 
 		followersData = append(followersData, followerData)
 	}
@@ -46,6 +79,6 @@ func GetFollowers(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(followersData)
 	if err != nil {
-		log.Fatalf("Error encoding data: %s", err)
+		return
 	}
 }
