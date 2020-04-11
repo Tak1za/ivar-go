@@ -30,7 +30,7 @@ func UsersController(w http.ResponseWriter, _ *http.Request) {
 	iter := firestore.Collection("users").Documents(ctx)
 	var users []models.User
 	for {
-		doc, err := iter.Next()
+		userSnap, err := iter.Next()
 		var user models.User
 		if err == iterator.Done {
 			break
@@ -39,12 +39,12 @@ func UsersController(w http.ResponseWriter, _ *http.Request) {
 			return
 		}
 
-		jsonString, _ := json.Marshal(doc.Data())
-		err = json.Unmarshal(jsonString, &user)
+		err = userSnap.DataTo(&user)
 		if err != nil {
 			return
 		}
-		user.ID = doc.Ref.ID
+
+		user.ID = userSnap.Ref.ID
 		users = append(users, user)
 	}
 

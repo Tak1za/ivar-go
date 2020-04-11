@@ -30,32 +30,32 @@ func GetPostsByUserId(w http.ResponseWriter, r *http.Request) {
 
 	defer firestore.Close()
 
-	doc := firestore.Collection("users").Doc(vars["userId"]).Collection("posts")
-	iter := doc.Documents(context.Background())
+	postsRef := firestore.Collection("users").Doc(vars["userId"]).Collection("posts")
+	iter := postsRef.Documents(context.Background())
 	defer iter.Stop()
 
 	var posts []models.Post
 
 	for {
 		var post models.Post
-		doc, err := iter.Next()
-		if doc == nil {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
+		postSnap, err := iter.Next()
 		if err == iterator.Done {
 			break
+		}
+		if postSnap == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
 		}
 		if err != nil {
 			return
 		}
 
-		jsonString, _ := json.Marshal(doc.Data())
-		err = json.Unmarshal(jsonString, &post)
+		err = postSnap.DataTo(&post)
 		if err != nil {
 			return
 		}
-		post.ID = doc.Ref.ID
+
+		post.ID = postSnap.Ref.ID
 		posts = append(posts, post)
 	}
 
@@ -89,19 +89,18 @@ func GetPostByPostId(w http.ResponseWriter, r *http.Request) {
 	defer firestore.Close()
 
 	path := fmt.Sprintf("users/%s/posts", vars["userId"])
-	postData, errNotFound := firestore.Collection(path).Doc(vars["postId"]).Get(context.Background())
+	postSnap, errNotFound := firestore.Collection(path).Doc(vars["postId"]).Get(context.Background())
 	if errNotFound != nil {
 		return
 	}
 
 	var post models.Post
 
-	jsonString, _ := json.Marshal(postData.Data())
-	err = json.Unmarshal(jsonString, &post)
+	err = postSnap.DataTo(&post)
 	if err != nil {
 		return
 	}
-	post.ID = postData.Ref.ID
+	post.ID = postSnap.Ref.ID
 
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(post)

@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	firestore2 "cloud.google.com/go/firestore"
 	"context"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -34,30 +33,19 @@ func GetFollowers(w http.ResponseWriter, r *http.Request) {
 
 	defer firestore.Close()
 
-	usersRef, errNotFound := firestore.Collection("users").Doc(vars["userId"]).Get(context.Background())
+	usersSnap, errNotFound := firestore.Collection("users").Doc(vars["userId"]).Get(context.Background())
 	if errNotFound != nil {
 		return
 	}
 
-	followersRef, err := usersRef.DataAt("followers")
-	if followersRef == nil {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
+	var followerRefs models.FollowerRefs
+
+	err = usersSnap.DataTo(&followerRefs)
 	if err != nil {
 		return
 	}
 
-	//Doing this because we are storing userRef inside followers array
-	var followersRefs []*firestore2.DocumentRef
-
-	jsonString, _ := json.Marshal(followersRef)
-	err = json.Unmarshal(jsonString, &followersRefs)
-	if err != nil {
-		return
-	}
-
-	followersSnaps, errNotFound := firestore.GetAll(context.Background(), followersRefs)
+	followersSnaps, errNotFound := firestore.GetAll(context.Background(), followerRefs.FollowersRefs)
 	if errNotFound != nil {
 		return
 	}
@@ -67,12 +55,11 @@ func GetFollowers(w http.ResponseWriter, r *http.Request) {
 	for _, fs := range followersSnaps {
 		var followerData models.User
 
-		jsonString, _ = json.Marshal(fs.Data())
-		err = json.Unmarshal(jsonString, &followerData)
+		err = fs.DataTo(&followerData)
 		if err != nil {
 			return
 		}
-
+		followerData.ID = fs.Ref.ID
 		followersData = append(followersData, followerData)
 	}
 
