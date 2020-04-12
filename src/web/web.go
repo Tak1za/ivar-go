@@ -12,10 +12,11 @@ func main() {
 	//Router Setup
 	router := mux.NewRouter().StrictSlash(true)
 	router.Use(middleware)
-	router.HandleFunc("/users", controllers.UsersController)
-	router.HandleFunc("/posts/{userId}", controllers.GetPostsByUserId)
-	router.HandleFunc("/post/{userId}/{postId}", controllers.GetPostByPostId)
-	router.HandleFunc("/followers/{userId}", controllers.GetFollowers)
+	router.HandleFunc("/users", controllers.UsersController).Methods("GET")
+	router.HandleFunc("/posts/{userId}", controllers.GetPostsByUserId).Methods("GET")
+	router.HandleFunc("/post/{userId}/{postId}", controllers.GetPostByPostId).Methods("GET")
+	router.HandleFunc("/followers/{userId}", controllers.GetFollowers).Methods("GET")
+	router.HandleFunc("/posts/{userId}", controllers.CreatePost).Methods("POST")
 	fmt.Println("IVAR-Go listening at port: 8080")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
