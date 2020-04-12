@@ -22,7 +22,7 @@ func GetPostsByUserId(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	vars := mux.Vars(r)
+	userId := r.Header.Get("userId")
 
 	firestore, err := client.GetFirestoreClient()
 	if err != nil {
@@ -31,7 +31,7 @@ func GetPostsByUserId(w http.ResponseWriter, r *http.Request) {
 
 	defer firestore.Close()
 
-	postsRef := firestore.Collection("users").Doc(vars["userId"]).Collection("posts")
+	postsRef := firestore.Collection("users").Doc(userId).Collection("posts")
 	iter := postsRef.Documents(context.Background())
 	defer iter.Stop()
 
@@ -82,6 +82,8 @@ func GetPostByPostId(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	vars := mux.Vars(r)
+	postId := vars["postId"]
+	userId := r.Header.Get("userId")
 
 	firestore, err := client.GetFirestoreClient()
 	if err != nil {
@@ -89,8 +91,8 @@ func GetPostByPostId(w http.ResponseWriter, r *http.Request) {
 	}
 	defer firestore.Close()
 
-	path := fmt.Sprintf("users/%s/posts", vars["userId"])
-	postSnap, errNotFound := firestore.Collection(path).Doc(vars["postId"]).Get(context.Background())
+	path := fmt.Sprintf("users/%s/posts", userId)
+	postSnap, errNotFound := firestore.Collection(path).Doc(postId).Get(context.Background())
 	if errNotFound != nil {
 		return
 	}
@@ -119,7 +121,7 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	vars := mux.Vars(r)
+	userId := r.Header.Get("userId")
 
 	firestore, err := client.GetFirestoreClient()
 	if err != nil {
@@ -139,7 +141,7 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 	newPost.Comments = []models.Comment{}
 	newPost.Likes = []string{}
 
-	path := fmt.Sprintf("users/%s/posts", vars["userId"])
+	path := fmt.Sprintf("users/%s/posts", userId)
 	createdPost, _, err := firestore.Collection(path).Add(context.Background(), newPost)
 	if err != nil {
 		return
