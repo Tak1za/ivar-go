@@ -3,6 +3,8 @@ package controllers
 import (
 	firestore2 "cloud.google.com/go/firestore"
 	"encoding/json"
+	"fmt"
+	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
 	"google.golang.org/api/iterator"
 	"ivar-go/src/client"
@@ -12,16 +14,19 @@ import (
 	"time"
 )
 
-func UsersController(w http.ResponseWriter, _ *http.Request) {
+func GetUser(w http.ResponseWriter, r *http.Request) {
 	var err error
+	var errNotFound error
 	defer func() {
 		if err != nil {
 			log.Printf("Error in GetFollowersController: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
+		if errNotFound != nil {
+			log.Printf("Error in GetPostByPostIdController: %v", err)
+			w.WriteHeader(http.StatusNotFound)
+		}
 	}()
-
-	ctx := context.Background()
 
 	firestore, err := client.GetFirestoreClient()
 	if err != nil {
@@ -29,29 +34,62 @@ func UsersController(w http.ResponseWriter, _ *http.Request) {
 	}
 	defer firestore.Close()
 
-	iter := firestore.Collection("users").Documents(ctx)
-	var users []models.GetUser
+	vars := mux.Vars(r)
+	userId := vars["userId"]
+
+	userSnap, errNotFound := firestore.Collection("users").Doc(userId).Get(context.Background())
+	if errNotFound != nil {
+		return
+	}
+
+	var user models.User
+	var userData models.GetUserResponse
+
+	err = userSnap.DataTo(&user)
+	if err != nil {
+		return
+	}
+
+	userData.Username = userSnap.Ref.ID
+	userData.FollowerCount = len(user.Followers)
+	userData.FollowingCount = len(user.Following)
+	userData.LastName = user.LastName
+	userData.FirstName = user.FirstName
+	userData.Email = user.Email
+	userData.CreatedAt = user.CreatedAt
+	userData.UpdatedAt = user.UpdatedAt
+
+	path := fmt.Sprintf("users/%s/posts", userId)
+	iter := firestore.Collection(path).Documents(context.Background())
+	var userPosts []models.GetPost
 	for {
-		userSnap, err := iter.Next()
-		var user models.GetUser
+		var post models.GetPost
+		postSnap, err := iter.Next()
 		if err == iterator.Done {
 			break
 		}
+
+		if postSnap == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
 		if err != nil {
 			return
 		}
 
-		err = userSnap.DataTo(&user)
+		err = postSnap.DataTo(&post)
 		if err != nil {
 			return
 		}
-
-		user.ID = userSnap.Ref.ID
-		users = append(users, user)
+		post.ID = postSnap.Ref.ID
+		userPosts = append(userPosts, post)
 	}
 
+	userData.Posts = userPosts
+
 	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(users)
+	err = json.NewEncoder(w).Encode(userData)
 	if err != nil {
 		return
 	}
