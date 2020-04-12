@@ -18,14 +18,27 @@ type User struct {
 }
 
 type Post struct {
+	Text      string    `firestore:"text"`
+	ImageUrl  string    `firestore:"imageUrl"`
+	Likes     []string  `firestore:"likes"`
+	CreatedAt time.Time `firestore:"createdAt"`
+	UpdatedAt time.Time `firestore:"updatedAt"`
+	Comments  []Comment `firestore:"comments"`
+}
+
+type GetPost struct {
 	ID        string    `firestore:"id"`
 	Text      string    `firestore:"text"`
 	ImageUrl  string    `firestore:"imageUrl"`
 	Likes     []string  `firestore:"likes"`
-	Username  string    `firestore:"username"`
 	CreatedAt time.Time `firestore:"createdAt"`
 	UpdatedAt time.Time `firestore:"updatedAt"`
 	Comments  []Comment `firestore:"comments"`
+}
+
+type CreatePost struct {
+	Text     string `firestore:"id"`
+	ImageUrl string `firestore:"id"`
 }
 
 type Comment struct {
