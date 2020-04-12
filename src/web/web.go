@@ -15,6 +15,7 @@ func main() {
 
 	//User related routes
 	router.HandleFunc("/users", controllers.UsersController).Methods("GET")
+	router.HandleFunc("/users", controllers.CreateUser).Methods("POST")
 
 	//Post related routes
 	router.HandleFunc("/posts", controllers.GetPostsByUserId).Methods("GET")

@@ -49,10 +49,10 @@ func GetFollowers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var followersData []models.User
+	var followersData []models.GetUser
 
 	for _, fs := range followersSnaps {
-		var followerData models.User
+		var followerData models.GetUser
 
 		err = fs.DataTo(&followerData)
 		if err != nil {
