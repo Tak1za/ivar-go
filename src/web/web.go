@@ -18,12 +18,14 @@ func main() {
 	router.HandleFunc("/users", controllers.CreateUser).Methods("POST")
 
 	//Post related routes
-	router.HandleFunc("/posts", controllers.GetPostsByUserId).Methods("GET")
-	router.HandleFunc("/posts/{postId}", controllers.GetPostByPostId).Methods("GET")
+	router.HandleFunc("/posts", controllers.GetPostsByUserId).Queries("u", "{u}").Methods("GET")
+	router.HandleFunc("/posts/{postId}", controllers.GetPostByPostId).Queries("u", "{u}").Methods("GET")
 	router.HandleFunc("/posts", controllers.CreatePost).Methods("POST")
+	router.HandleFunc("/comments", controllers.CreateComment).Methods("POST")
+	router.HandleFunc("/likes", controllers.AddLikeToPost).Methods("POST")
 
 	//Follower related routes
-	router.HandleFunc("/followers", controllers.GetFollowers).Methods("GET")
+	router.HandleFunc("/followers", controllers.GetFollowers).Queries("u", "{u}").Methods("GET")
 
 	fmt.Println("IVAR-Go listening at port: 8080")
 	log.Fatal(http.ListenAndServe(":8080", router))

@@ -1,4 +1,4 @@
-package postFunctions
+package impl
 
 import (
 	"cloud.google.com/go/firestore"
@@ -56,7 +56,7 @@ func GetPost(fc *firestore.Client, username string, postId string) (models.GetPo
 	return post, nil
 }
 
-func CreatePost(fc *firestore.Client, username string, createPostBody models.CreatePost) (string, error) {
+func CreatePost(fc *firestore.Client, createPostBody models.CreatePost) (string, error) {
 	var newPost models.Post
 
 	newPost.CreatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
@@ -65,7 +65,7 @@ func CreatePost(fc *firestore.Client, username string, createPostBody models.Cre
 	newPost.ImageUrl = createPostBody.ImageUrl
 	newPost.Likes = []string{}
 
-	path := fmt.Sprintf("users/%s/posts", username)
+	path := fmt.Sprintf("users/%s/posts", createPostBody.Username)
 	createdPost, _, err := fc.Collection(path).Add(context.Background(), newPost)
 	if err != nil {
 		return "", err

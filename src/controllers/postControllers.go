@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"ivar-go/src/client"
-	"ivar-go/src/impl/postFunctions"
+	"ivar-go/src/impl"
 	"ivar-go/src/models"
 	"log"
 	"net/http"
@@ -19,7 +19,8 @@ func GetPostsByUserId(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	username := r.Header.Get("username")
+	queries := r.URL.Query()
+	username := queries["u"][0]
 
 	fc, err := client.GetFirestoreClient()
 	if err != nil {
@@ -28,7 +29,7 @@ func GetPostsByUserId(w http.ResponseWriter, r *http.Request) {
 
 	defer fc.Close()
 
-	posts, err := postFunctions.GetPosts(fc, username)
+	posts, err := impl.GetPosts(fc, username)
 
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(posts)
@@ -48,7 +49,9 @@ func GetPostByPostId(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	postId := vars["postId"]
-	username := r.Header.Get("username")
+
+	queries := r.URL.Query()
+	username := queries["u"][0]
 
 	fc, err := client.GetFirestoreClient()
 	if err != nil {
@@ -56,7 +59,7 @@ func GetPostByPostId(w http.ResponseWriter, r *http.Request) {
 	}
 	defer fc.Close()
 
-	post, err := postFunctions.GetPost(fc, username, postId)
+	post, err := impl.GetPost(fc, username, postId)
 	if err != nil {
 		return
 	}
@@ -77,8 +80,6 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	username := r.Header.Get("username")
-
 	fc, err := client.GetFirestoreClient()
 	if err != nil {
 		return
@@ -89,7 +90,7 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	_ = json.NewDecoder(r.Body).Decode(&createPostBody)
 
-	createdPostId, err := postFunctions.CreatePost(fc, username, createPostBody)
+	createdPostId, err := impl.CreatePost(fc, createPostBody)
 	if err != nil {
 		return
 	}
