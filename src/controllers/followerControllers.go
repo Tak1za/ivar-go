@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"encoding/json"
-	"github.com/gorilla/mux"
 	"ivar-go/src/client"
 	"ivar-go/src/models"
 	"log"
@@ -24,7 +23,7 @@ func GetFollowers(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	vars := mux.Vars(r)
+	userId := r.Header.Get("userId")
 
 	firestore, err := client.GetFirestoreClient()
 	if err != nil {
@@ -33,7 +32,7 @@ func GetFollowers(w http.ResponseWriter, r *http.Request) {
 
 	defer firestore.Close()
 
-	usersSnap, errNotFound := firestore.Collection("users").Doc(vars["userId"]).Get(context.Background())
+	usersSnap, errNotFound := firestore.Collection("users").Doc(userId).Get(context.Background())
 	if errNotFound != nil {
 		return
 	}
