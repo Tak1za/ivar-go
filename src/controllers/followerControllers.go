@@ -49,17 +49,22 @@ func GetFollowers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var followersData []models.GetUser
+	var followersData []models.GetFollowersResponse
 
 	for _, fs := range followersSnaps {
-		var followerData models.GetUser
+		var followerData models.User
+		var followerResponse models.GetFollowersResponse
 
 		err = fs.DataTo(&followerData)
 		if err != nil {
 			return
 		}
-		followerData.ID = fs.Ref.ID
-		followersData = append(followersData, followerData)
+
+		followerResponse.FirstName = followerData.FirstName
+		followerResponse.LastName = followerData.LastName
+		followerResponse.Username = fs.Ref.ID
+
+		followersData = append(followersData, followerResponse)
 	}
 
 	w.WriteHeader(http.StatusOK)
