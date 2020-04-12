@@ -2,15 +2,12 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/mux"
-	"golang.org/x/net/context"
-	"google.golang.org/api/iterator"
 	"ivar-go/src/client"
+	"ivar-go/src/impl/postFunctions"
 	"ivar-go/src/models"
 	"log"
 	"net/http"
-	"time"
 )
 
 func GetPostsByUserId(w http.ResponseWriter, r *http.Request) {
@@ -22,43 +19,16 @@ func GetPostsByUserId(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	userId := r.Header.Get("userId")
+	username := r.Header.Get("username")
 
-	firestore, err := client.GetFirestoreClient()
+	fc, err := client.GetFirestoreClient()
 	if err != nil {
 		return
 	}
 
-	defer firestore.Close()
+	defer fc.Close()
 
-	postsRef := firestore.Collection("users").Doc(userId).Collection("posts")
-	iter := postsRef.Documents(context.Background())
-	defer iter.Stop()
-
-	var posts []models.GetPost
-
-	for {
-		var post models.GetPost
-		postSnap, err := iter.Next()
-		if err == iterator.Done {
-			break
-		}
-		if postSnap == nil {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		if err != nil {
-			return
-		}
-
-		err = postSnap.DataTo(&post)
-		if err != nil {
-			return
-		}
-
-		post.ID = postSnap.Ref.ID
-		posts = append(posts, post)
-	}
+	posts, err := postFunctions.GetPosts(fc, username)
 
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(posts)
@@ -69,41 +39,27 @@ func GetPostsByUserId(w http.ResponseWriter, r *http.Request) {
 
 func GetPostByPostId(w http.ResponseWriter, r *http.Request) {
 	var err error
-	var errNotFound error
 	defer func() {
 		if err != nil {
 			log.Printf("Error in GetPostByPostIdController: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
-		if errNotFound != nil {
-			log.Printf("Error in GetPostByPostIdController: %v", err)
-			w.WriteHeader(http.StatusNotFound)
-		}
 	}()
 
 	vars := mux.Vars(r)
 	postId := vars["postId"]
-	userId := r.Header.Get("userId")
+	username := r.Header.Get("username")
 
-	firestore, err := client.GetFirestoreClient()
+	fc, err := client.GetFirestoreClient()
 	if err != nil {
 		return
 	}
-	defer firestore.Close()
+	defer fc.Close()
 
-	path := fmt.Sprintf("users/%s/posts", userId)
-	postSnap, errNotFound := firestore.Collection(path).Doc(postId).Get(context.Background())
-	if errNotFound != nil {
-		return
-	}
-
-	var post models.GetPost
-
-	err = postSnap.DataTo(&post)
+	post, err := postFunctions.GetPost(fc, username, postId)
 	if err != nil {
 		return
 	}
-	post.ID = postSnap.Ref.ID
 
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(post)
@@ -116,39 +72,30 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 	var err error
 	defer func() {
 		if err != nil {
-			log.Printf("Error in GetPostByPostIdController: %v", err)
+			log.Printf("Error in CreatePostController: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	}()
 
-	userId := r.Header.Get("userId")
+	username := r.Header.Get("username")
 
-	firestore, err := client.GetFirestoreClient()
+	fc, err := client.GetFirestoreClient()
 	if err != nil {
 		return
 	}
-	defer firestore.Close()
+	defer fc.Close()
 
-	var createPost models.CreatePost
-	var newPost models.Post
+	var createPostBody models.CreatePost
 
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewDecoder(r.Body).Decode(&createPost)
-	newPost.CreatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	newPost.UpdatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	newPost.Text = createPost.Text
-	newPost.ImageUrl = createPost.ImageUrl
-	newPost.Comments = []models.Comment{}
-	newPost.Likes = []string{}
+	_ = json.NewDecoder(r.Body).Decode(&createPostBody)
 
-	path := fmt.Sprintf("users/%s/posts", userId)
-	createdPost, _, err := firestore.Collection(path).Add(context.Background(), newPost)
+	createdPostId, err := postFunctions.CreatePost(fc, username, createPostBody)
 	if err != nil {
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(createdPost.ID)
+	err = json.NewEncoder(w).Encode(createdPostId)
 	if err != nil {
 		return
 	}
