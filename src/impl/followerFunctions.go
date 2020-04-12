@@ -1,4 +1,4 @@
-package followerFunctions
+package impl
 
 import (
 	"cloud.google.com/go/firestore"

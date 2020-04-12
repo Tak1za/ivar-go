@@ -1,9 +1,8 @@
-package userFunctions
+package impl
 
 import (
 	"cloud.google.com/go/firestore"
 	"context"
-	"ivar-go/src/impl/postFunctions"
 	"ivar-go/src/mapper"
 	"ivar-go/src/models"
 	"time"
@@ -24,7 +23,7 @@ func GetUser(fc *firestore.Client, username string) (models.GetUserResponse, err
 	}
 
 	//Get User Posts
-	userPosts, err := postFunctions.GetPosts(fc, username)
+	userPosts, err := GetPosts(fc, username)
 	if err != nil {
 		return models.GetUserResponse{}, nil
 	}

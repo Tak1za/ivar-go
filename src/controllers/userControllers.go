@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"ivar-go/src/client"
-	"ivar-go/src/impl/userFunctions"
+	"ivar-go/src/impl"
 	"ivar-go/src/models"
 	"log"
 	"net/http"
@@ -28,7 +28,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
-	userData, err := userFunctions.GetUser(fc, username)
+	userData, err := impl.GetUser(fc, username)
 	if err != nil {
 		return
 	}
@@ -59,7 +59,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	_ = json.NewDecoder(r.Body).Decode(&createUserBody)
 
-	err = userFunctions.CreateUser(fc, createUserBody)
+	err = impl.CreateUser(fc, createUserBody)
 	if err != nil {
 		return
 	}

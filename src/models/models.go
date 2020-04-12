@@ -9,8 +9,8 @@ type User struct {
 	CreatedAt time.Time                `firestore:"createdAt"`
 	Email     string                   `firestore:"email"`
 	FirstName string                   `firestore:"firstName"`
-	Followers []*firestore.DocumentRef `firestor:"followers"`
-	Following []*firestore.DocumentRef `firestor:"following"`
+	Followers []*firestore.DocumentRef `firestore:"followers"`
+	Following []*firestore.DocumentRef `firestore:"following"`
 	LastName  string                   `firestore:"lastName"`
 	UpdatedAt time.Time                `firestore:"updatedAt"`
 }
@@ -58,17 +58,32 @@ type GetPostResponse struct {
 }
 
 type CreatePost struct {
+	Username string `firestore:"username"`
 	Text     string `firestore:"id"`
-	ImageUrl string `firestore:"id"`
+	ImageUrl string `firestore:"imageUrl"`
 }
 
 type Comment struct {
-	ID        string    `firestore:"id"`
-	Username  string    `firestore:"username"`
-	Likes     []string  `firestore:"likes"`
-	CreatedAt time.Time `firestore:"createdAt"`
-	UpdatedAt time.Time `firestore:"updatedAt"`
-	Comments  []Comment `firestore:"comments"`
+	Username      string                   `firestore:"username"`
+	Text          string                   `firestore:"text"`
+	Likes         []*firestore.DocumentRef `firestore:"likes"`
+	CreatedAt     time.Time                `firestore:"createdAt"`
+	UpdatedAt     time.Time                `firestore:"updatedAt"`
+	ParentComment string                   `firestore:"parentComment"`
+}
+
+type CreateComment struct {
+	CurrentUser   string `firestore:"currentUser"`
+	PostId        string `firestore:"postId"`
+	PostOwner     string `firestore:"postOwner"`
+	Text          string `firestore:"text"`
+	ParentComment string `firestore:"parentComment"`
+}
+
+type AddLike struct {
+	CurrentUser string `firestore:"currentUser"`
+	EntityId    string `firestore:"entityId"`
+	EntityOwner string `firestore:"entityOwner"`
 }
 
 type FollowerRefs struct {
