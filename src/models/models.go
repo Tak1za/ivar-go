@@ -16,15 +16,15 @@ type User struct {
 }
 
 type GetUserResponse struct {
-	CreatedAt      time.Time `firestore:"createdAt"`
-	Email          string    `firestore:"email"`
-	FirstName      string    `firestore:"firstName"`
-	FollowerCount  int       `firestore:"followerCount"`
-	FollowingCount int       `firestore:"followingCount"`
-	LastName       string    `firestore:"lastName"`
-	Posts          []GetPost `firestore:"posts"`
-	UpdatedAt      time.Time `firestore:"updatedAt"`
-	Username       string    `firestore:"username"`
+	CreatedAt      time.Time         `firestore:"createdAt"`
+	Email          string            `firestore:"email"`
+	FirstName      string            `firestore:"firstName"`
+	FollowerCount  int               `firestore:"followerCount"`
+	FollowingCount int               `firestore:"followingCount"`
+	LastName       string            `firestore:"lastName"`
+	Posts          []GetPostResponse `firestore:"posts"`
+	UpdatedAt      time.Time         `firestore:"updatedAt"`
+	Username       string            `firestore:"username"`
 }
 
 type GetFollowersResponse struct {
@@ -46,17 +46,15 @@ type Post struct {
 	Likes     []string  `firestore:"likes"`
 	CreatedAt time.Time `firestore:"createdAt"`
 	UpdatedAt time.Time `firestore:"updatedAt"`
-	Comments  []Comment `firestore:"comments"`
 }
 
-type GetPost struct {
+type GetPostResponse struct {
 	ID        string    `firestore:"id"`
 	Text      string    `firestore:"text"`
 	ImageUrl  string    `firestore:"imageUrl"`
 	Likes     []string  `firestore:"likes"`
 	CreatedAt time.Time `firestore:"createdAt"`
 	UpdatedAt time.Time `firestore:"updatedAt"`
-	Comments  []Comment `firestore:"comments"`
 }
 
 type CreatePost struct {

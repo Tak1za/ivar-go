@@ -1,70 +1,34 @@
 package controllers
 
 import (
-	"context"
 	"encoding/json"
 	"ivar-go/src/client"
-	"ivar-go/src/models"
+	"ivar-go/src/impl/followerFunctions"
 	"log"
 	"net/http"
 )
 
 func GetFollowers(w http.ResponseWriter, r *http.Request) {
 	var err error
-	var errNotFound error
 	defer func() {
 		if err != nil {
 			log.Printf("Error in GetFollowersController: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
-		if errNotFound != nil {
-			log.Printf("Error in GetFollowersController: %v", err)
-			w.WriteHeader(http.StatusNotFound)
-		}
 	}()
 
-	userId := r.Header.Get("userId")
+	username := r.Header.Get("username")
 
-	firestore, err := client.GetFirestoreClient()
+	fc, err := client.GetFirestoreClient()
 	if err != nil {
 		return
 	}
 
-	defer firestore.Close()
+	defer fc.Close()
 
-	usersSnap, errNotFound := firestore.Collection("users").Doc(userId).Get(context.Background())
-	if errNotFound != nil {
-		return
-	}
-
-	var followerRefs models.FollowerRefs
-
-	err = usersSnap.DataTo(&followerRefs)
+	followersData, err := followerFunctions.GetFollowers(fc, username)
 	if err != nil {
 		return
-	}
-
-	followersSnaps, errNotFound := firestore.GetAll(context.Background(), followerRefs.FollowersRefs)
-	if errNotFound != nil {
-		return
-	}
-
-	var followersData []models.GetFollowersResponse
-
-	for _, fs := range followersSnaps {
-		var followerData models.User
-		var followerResponse models.GetFollowersResponse
-
-		err = fs.DataTo(&followerData)
-		if err != nil {
-			return
-		}
-
-		followerResponse.FirstName = followerData.FirstName
-		followerResponse.LastName = followerData.LastName
-		followerResponse.Username = fs.Ref.ID
-
-		followersData = append(followersData, followerResponse)
 	}
 
 	w.WriteHeader(http.StatusOK)

@@ -14,7 +14,7 @@ func main() {
 	router.Use(middleware)
 
 	//User related routes
-	router.HandleFunc("/users/{userId}", controllers.GetUser).Methods("GET")
+	router.HandleFunc("/users/{username}", controllers.GetUser).Methods("GET")
 	router.HandleFunc("/users", controllers.CreateUser).Methods("POST")
 
 	//Post related routes
