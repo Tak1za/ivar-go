@@ -27,6 +27,12 @@ type GetUserResponse struct {
 	Username       string            `firestore:"username"`
 }
 
+type GetLikersResponse struct {
+	FirstName string `firestore:"firstName"`
+	LastName  string `firestore:"lastName"`
+	Username  string `firestore:"username"`
+}
+
 type GetFollowersResponse struct {
 	FirstName string `firestore:"firstName"`
 	LastName  string `firestore:"lastName"`
@@ -41,20 +47,20 @@ type CreateUser struct {
 }
 
 type Post struct {
-	Text      string    `firestore:"text"`
-	ImageUrl  string    `firestore:"imageUrl"`
-	Likes     []string  `firestore:"likes"`
-	CreatedAt time.Time `firestore:"createdAt"`
-	UpdatedAt time.Time `firestore:"updatedAt"`
+	Text      string                   `firestore:"text"`
+	ImageUrl  string                   `firestore:"imageUrl"`
+	Likes     []*firestore.DocumentRef `firestore:"likes"`
+	CreatedAt time.Time                `firestore:"createdAt"`
+	UpdatedAt time.Time                `firestore:"updatedAt"`
 }
 
 type GetPostResponse struct {
-	ID        string    `firestore:"id"`
-	Text      string    `firestore:"text"`
-	ImageUrl  string    `firestore:"imageUrl"`
-	Likes     []string  `firestore:"likes"`
-	CreatedAt time.Time `firestore:"createdAt"`
-	UpdatedAt time.Time `firestore:"updatedAt"`
+	ID         string    `firestore:"id"`
+	Text       string    `firestore:"text"`
+	ImageUrl   string    `firestore:"imageUrl"`
+	LikesCount int       `firestore:"likesCount"`
+	CreatedAt  time.Time `firestore:"createdAt"`
+	UpdatedAt  time.Time `firestore:"updatedAt"`
 }
 
 type CreatePost struct {
@@ -88,4 +94,8 @@ type AddLike struct {
 
 type FollowerRefs struct {
 	FollowersRefs []*firestore.DocumentRef `firestore:"followers"`
+}
+
+type LikerRefs struct {
+	LikerRefs []*firestore.DocumentRef `firestore:"likes"`
 }

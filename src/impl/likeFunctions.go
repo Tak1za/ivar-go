@@ -4,6 +4,7 @@ import (
 	"cloud.google.com/go/firestore"
 	"context"
 	"fmt"
+	"ivar-go/src/mapper"
 	"ivar-go/src/models"
 )
 
@@ -18,4 +19,43 @@ func AddLikeToPost(fc *firestore.Client, addLikeBody models.AddLike) error {
 	}
 
 	return nil
+}
+
+func GetLikers(fc *firestore.Client, username string, postId string) ([]models.GetLikersResponse, error) {
+	path := fmt.Sprintf("users/%s/posts/%s", username, postId)
+	postSnap, err := fc.Doc(path).Get(context.Background())
+	if err != nil {
+		return []models.GetLikersResponse{}, err
+	}
+
+	var likerRefs models.LikerRefs
+
+	err = postSnap.DataTo(&likerRefs)
+	if err != nil {
+		return []models.GetLikersResponse{}, err
+	}
+
+	likersSnaps, err := fc.GetAll(context.Background(), likerRefs.LikerRefs)
+	if err != nil {
+		return []models.GetLikersResponse{}, err
+	}
+
+	var likersData []models.GetLikersResponse
+
+	for _, ls := range likersSnaps {
+		var likerData models.User
+		var likersResponse models.GetLikersResponse
+
+		err = ls.DataTo(&likerData)
+		if err != nil {
+			return []models.GetLikersResponse{}, err
+		}
+
+		likersResponse = mapper.UserToLikerResponse(likerData, likersResponse)
+		likersResponse.Username = ls.Ref.ID
+
+		likersData = append(likersData, likersResponse)
+	}
+
+	return likersData, nil
 }

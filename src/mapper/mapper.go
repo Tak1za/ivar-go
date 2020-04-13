@@ -22,3 +22,22 @@ func UserToFollowerResponse(source models.User, dest models.GetFollowersResponse
 
 	return dest
 }
+
+func UserToLikerResponse(source models.User, dest models.GetLikersResponse) models.GetLikersResponse {
+
+	dest.FirstName = source.FirstName
+	dest.LastName = source.LastName
+
+	return dest
+}
+
+func PostToGetPostResponse(source models.Post, dest models.GetPostResponse) models.GetPostResponse {
+
+	dest.UpdatedAt = source.UpdatedAt
+	dest.Text = source.Text
+	dest.CreatedAt = source.CreatedAt
+	dest.ImageUrl = source.ImageUrl
+	dest.LikesCount = len(source.Likes)
+
+	return dest
+}

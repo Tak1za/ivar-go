@@ -21,8 +21,13 @@ func main() {
 	router.HandleFunc("/posts", controllers.GetPostsByUserId).Queries("u", "{u}").Methods("GET")
 	router.HandleFunc("/posts/{postId}", controllers.GetPostByPostId).Queries("u", "{u}").Methods("GET")
 	router.HandleFunc("/posts", controllers.CreatePost).Methods("POST")
+
+	//Comment related routes
 	router.HandleFunc("/comments", controllers.CreateComment).Methods("POST")
+
+	//Like related routes
 	router.HandleFunc("/likes", controllers.AddLikeToPost).Methods("POST")
+	router.HandleFunc("/likes", controllers.GetLikersForPost).Queries("u", "{u}").Queries("p", "{p}").Methods("GET")
 
 	//Follower related routes
 	router.HandleFunc("/followers", controllers.GetFollowers).Queries("u", "{u}").Methods("GET")

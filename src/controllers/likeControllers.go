@@ -36,3 +36,35 @@ func AddLikeToPost(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 }
+
+func GetLikersForPost(w http.ResponseWriter, r *http.Request) {
+	var err error
+	defer func() {
+		if err != nil {
+			log.Printf("Error in GetLikersForPostController: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	}()
+
+	fc, err := client.GetFirestoreClient()
+	if err != nil {
+		return
+	}
+
+	defer fc.Close()
+
+	queries := r.URL.Query()
+	username := queries["u"][0]
+	postId := queries["p"][0]
+
+	likersData, err := impl.GetLikers(fc, username, postId)
+	if err != nil {
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(likersData)
+	if err != nil {
+		return
+	}
+}
