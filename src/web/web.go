@@ -6,6 +6,7 @@ import (
 	"ivar-go/src/controllers"
 	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
@@ -33,7 +34,8 @@ func main() {
 	router.HandleFunc("/followers", controllers.GetFollowers).Queries("u", "{u}").Methods("GET")
 
 	fmt.Println("IVAR-Go listening at port: 8080")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	//log.Fatal(http.ListenAndServer(":8080", router))
+	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), router))
 }
 
 func middleware(next http.Handler) http.Handler {
