@@ -11,7 +11,7 @@ import (
 func main() {
 	//Router Setup
 	router := mux.NewRouter().StrictSlash(true)
-	router.Use(middleware)
+	router.Use(middleware, middleware2)
 
 	//User related routes
 	router.HandleFunc("/users/{username}", controllers.GetUser).Methods("GET")
@@ -47,5 +47,18 @@ func middleware(next http.Handler) http.Handler {
 			return
 		}
 		next.ServeHTTP(w, r)
+	})
+}
+
+func middleware2(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		proto := req.Header.Get("x-forwarded-proto")
+		if proto == "http" || proto == "HTTP" {
+			http.Redirect(res, req, fmt.Sprintf("https://%s%s", req.Host, req.URL), http.StatusPermanentRedirect)
+			return
+		}
+
+		next.ServeHTTP(res, req)
+
 	})
 }
