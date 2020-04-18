@@ -2,17 +2,20 @@ package main
 
 import (
 	"fmt"
-	"github.com/gorilla/mux"
+	"ivar-go/src/client"
 	"ivar-go/src/controllers"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/gorilla/mux"
 )
 
 func main() {
 	//Router Setup
 	router := mux.NewRouter().StrictSlash(true)
-	router.Use(middleware, middleware2)
+	// router.Use(middleware, httpsRedirectMiddleware)
+	router.Use(middleware, httpsRedirectMiddleware, authMiddleware)
 
 	//User related routes
 	router.HandleFunc("/users/{username}", controllers.GetUser).Methods("GET")
@@ -34,7 +37,7 @@ func main() {
 	router.HandleFunc("/followers", controllers.GetFollowers).Queries("u", "{u}").Methods("GET")
 
 	fmt.Println("IVAR-Go listening at port: 8080")
-	//log.Fatal(http.ListenAndServer(":8080", router))
+	// log.Fatal(http.ListenAndServe(":8080", router))
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), router))
 }
 
@@ -52,15 +55,25 @@ func middleware(next http.Handler) http.Handler {
 	})
 }
 
-func middleware2(next http.Handler) http.Handler {
+func httpsRedirectMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		proto := req.Header.Get("x-forwarded-proto")
 		if proto == "http" || proto == "HTTP" {
 			http.Redirect(res, req, fmt.Sprintf("https://%s%s", req.Host, req.URL), http.StatusPermanentRedirect)
 			return
 		}
-
 		next.ServeHTTP(res, req)
+	})
+}
 
+func authMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		accessToken := w.Header().Get("accessToken")
+		_, err := client.VerifyAccessToken(accessToken)
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
 	})
 }
