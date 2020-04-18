@@ -2,20 +2,24 @@ package main
 
 import (
 	"fmt"
-	"ivar-go/src/client"
 	"ivar-go/src/controllers"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
 func main() {
+	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Origin", "Content-Type", "Accept"})
+	originsOk := handlers.AllowedOrigins([]string{"*"})
+	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
+
 	//Router Setup
 	router := mux.NewRouter().StrictSlash(true)
-	// router.Use(middleware, httpsRedirectMiddleware)
-	router.Use(middleware, httpsRedirectMiddleware, authMiddleware)
+	router.Use(httpsRedirectMiddleware)
+	//router.Use(middleware, httpsRedirectMiddleware, authMiddleware)
 
 	//User related routes
 	router.HandleFunc("/users/{username}", controllers.GetUser).Methods("GET")
@@ -38,7 +42,7 @@ func main() {
 
 	fmt.Println("IVAR-Go listening at port: 8080")
 	// log.Fatal(http.ListenAndServe(":8080", router))
-	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), router))
+	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), handlers.CORS(originsOk, headersOk, methodsOk)(router)))
 }
 
 func middleware(next http.Handler) http.Handler {
@@ -46,7 +50,7 @@ func middleware(next http.Handler) http.Handler {
 		w.Header().Add("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST,OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
 			return
@@ -66,14 +70,14 @@ func httpsRedirectMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func authMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		accessToken := w.Header().Get("accessToken")
-		_, err := client.VerifyAccessToken(accessToken)
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
+//func authMiddleware(next http.Handler) http.Handler {
+//	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//		accessToken := w.Header().Get("accessToken")
+//		_, err := client.VerifyAccessToken(accessToken)
+//		if err != nil {
+//			w.WriteHeader(http.StatusUnauthorized)
+//			return
+//		}
+//		next.ServeHTTP(w, r)
+//	})
+//}
